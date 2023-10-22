@@ -13,10 +13,6 @@ import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
 
-import java.io.FileNotFoundException;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Profile("test")
 public class ReportGeneratorControllerIT {
@@ -28,18 +24,17 @@ public class ReportGeneratorControllerIT {
     private BatchInvokerService batchInvokerService;
 
     @Test()
-    public void testGenerateReportWithInValidRequestFile() {
-     //   Exception exception = assertThrows( FileNotFoundException.class, () -> new ClassPathResource("inputErr.txt"));
-        Resource fileResource = new ClassPathResource("input.txt");
+    public void testGenerateReportWithInValidPath() {
+       Resource fileResource = new ClassPathResource("input.txt");
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("file", fileResource);
         var result = webTestClient.post()
-                .uri("/single-file-upload")
+                .uri("/abn/v1/single-file-uploadX")
                 .contentType(MediaType.TEXT_PLAIN)
                 .body(BodyInserters.fromMultipartData(builder.build()))
                 .exchange()
                 .expectBody().returnResult();
-      //  assertNotNull(exception);
+        Assert.assertNotNull(result.getStatus().is4xxClientError());
     }
 
     @Test
@@ -48,7 +43,7 @@ public class ReportGeneratorControllerIT {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("file", fileResource);
         var result = webTestClient.post()
-                .uri("/single-file-upload")
+                .uri("/abn/v1/single-file-upload")
                 .contentType(MediaType.TEXT_PLAIN)
                 .body(BodyInserters.fromMultipartData(builder.build()))
                 .exchange()
@@ -62,6 +57,21 @@ public class ReportGeneratorControllerIT {
         Assert.assertTrue(s.contains("CL432100020001"));
         Assert.assertTrue(s.contains("SGXFUNK20100910"));
         Assert.assertTrue(s.contains("CL123400030001"));
+    }
+
+    @Test
+    public void testGenerateReportWithInValidContentType() {
+        Resource fileResource = new ClassPathResource("input.txt");
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("file", fileResource);
+        var result = webTestClient.post()
+                .uri("/abn/v1/single-file-upload")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(BodyInserters.fromMultipartData(builder.build()))
+                .exchange()
+                .expectBody().returnResult();
+
+        Assert.assertNotNull(result.getStatus().is4xxClientError());
 
     }
 }
